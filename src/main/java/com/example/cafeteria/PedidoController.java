@@ -1,6 +1,8 @@
 package com.example.cafeteria;
 
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 @RequestMapping("/pedidos")
+@Tag(name = "Pedidos", description = "Gerenciador de pedidos")
 public class PedidoController {
 
     private static final Map<Long, Pedido> mapaPedidos = new ConcurrentHashMap<Long, Pedido>();
@@ -32,6 +35,7 @@ public class PedidoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Cadastrar pedidos", description = "Cadastra um novo pedido que não tenha cadastrado na base de memoria e dura somente o tempo de execução!")
     public Pedido criar(@RequestBody Pedido pedidoRequest) {
         Long id = idPedido.incrementAndGet();
         Pedido novoPedido = new Pedido(id, pedidoRequest.descricao(), pedidoRequest.valor(), "R");
