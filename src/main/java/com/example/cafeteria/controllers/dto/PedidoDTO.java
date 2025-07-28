@@ -1,8 +1,8 @@
-package com.example.cafeteria;
+package com.example.cafeteria.controllers.dto;
 
 import java.math.BigDecimal;
 
-public record Pedido(
+public record PedidoDTO(
         Long id,
         String descricao,
         BigDecimal valor,

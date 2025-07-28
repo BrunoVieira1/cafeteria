@@ -1,8 +1,12 @@
-package com.example.cafeteria;
+package com.example.cafeteria.controllers;
 
 
+import com.example.cafeteria.controllers.dto.PedidoDTO;
+import com.example.cafeteria.models.Pedido;
+import com.example.cafeteria.models.repository.PedidoRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,35 +21,37 @@ import java.util.concurrent.atomic.AtomicLong;
 @Tag(name = "Pedidos", description = "Gerenciador de pedidos")
 public class PedidoController {
 
-    private static final Map<Long, Pedido> mapaPedidos = new ConcurrentHashMap<Long, Pedido>();
+    private static final Map<Long, PedidoDTO> mapaPedidos = new ConcurrentHashMap<Long, PedidoDTO>();
     private static final AtomicLong idPedido = new AtomicLong();
 
     static {
         long id1 = idPedido.incrementAndGet();
-        mapaPedidos.put(id1, new Pedido(id1,"1 Expresso", new BigDecimal("9.50"), "P"));
+        mapaPedidos.put(id1, new PedidoDTO(id1,"1 Expresso", new BigDecimal("9.50"), "P"));
 
         long id2 = idPedido.incrementAndGet();
-        mapaPedidos.put(id2, new Pedido(id2,"1 cafe gelado", new BigDecimal("13.50"), "R"));
+        mapaPedidos.put(id2, new PedidoDTO(id2,"1 cafe gelado", new BigDecimal("13.50"), "R"));
     }
+
+
+    @Autowired
+    private PedidoRepository pedidoRepository;
 
     @GetMapping
     public Collection<Pedido> buscarTodos() {
-        return mapaPedidos.values();
+        return pedidoRepository.findAll();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Cadastrar pedidos", description = "Cadastra um novo pedido que não tenha cadastrado na base de memoria e dura somente o tempo de execução!")
     public Pedido criar(@RequestBody Pedido pedidoRequest) {
-        Long id = idPedido.incrementAndGet();
-        Pedido novoPedido = new Pedido(id, pedidoRequest.descricao(), pedidoRequest.valor(), "R");
-        mapaPedidos.put(id, novoPedido);
+        var novoPedido = pedidoRepository.save(pedidoRequest);
         return novoPedido;
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Pedido> buscarPorId(@PathVariable long id) {
-        Pedido pedido = mapaPedidos.get(id);
+        Pedido pedido = pedidoRepository.findById(id).orElse(null);
         if (pedido == null) {
             return ResponseEntity.notFound().build();
         }
@@ -54,21 +60,25 @@ public class PedidoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable long id) {
-        if(!mapaPedidos.containsKey(id)) {
+        var pedido = pedidoRepository.findById(id).orElse(null);
+        if(pedido == null) {
             return ResponseEntity.notFound().build();
         }
-        mapaPedidos.remove(id);
+        pedidoRepository.delete(pedido);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Pedido> atualizar(@PathVariable Long id, @RequestBody Pedido pedidoRequest) {
-        if (!mapaPedidos.containsKey(id)) {
+        var pedido = pedidoRepository.findById(id).orElse(null);
+        if (pedido == null) {
             return ResponseEntity.notFound().build();
         }
-        Pedido pedidoAtualizado = new Pedido(id, pedidoRequest.descricao(), pedidoRequest.valor(), pedidoRequest.status());
-        mapaPedidos.put(id, pedidoAtualizado);
-        return ResponseEntity.ok(pedidoAtualizado);
+        pedido.setDescricao(pedidoRequest.getDescricao());
+        pedido.setValor(pedidoRequest.getValor());
+        pedido.setStatus(pedidoRequest.getStatus());
+        pedidoRepository.save(pedido);
+        return ResponseEntity.ok(pedido);
     }
 
 
